@@ -84,7 +84,14 @@ def run_worker(controller_url: str, token: str, worker_id: str, interval: int, o
 
     while True:
         metrics = collect_metrics()
-        request_json(heartbeat_url, token, metrics)
+        try:
+            request_json(heartbeat_url, token, metrics)
+        except RuntimeError as exc:
+            # The controller keeps state in memory. Re-register after a restart.
+            if "HTTP 404" not in str(exc):
+                raise
+            request_json(register_url, token, registration)
+            request_json(heartbeat_url, token, metrics)
         print(
             "Heartbeat sent: "
             f"CPU {metrics['cpu_percent']:.1f}% | "
