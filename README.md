@@ -40,21 +40,24 @@ Install dependencies:
 python -m pip install -r requirements.txt
 ```
 
-Create a strong token and set it in the controller environment. Keep this value private.
+Generate a strong token and keep it private. The following commands create a random 32-byte secret.
 
 **Windows PowerShell**
 ```powershell
-$env:WORKER_SHARED_TOKEN = "<replace-with-a-long-random-secret>"
+$token = py -c "import secrets; print(secrets.token_urlsafe(32))"
+$env:WORKER_SHARED_TOKEN = $token
+Write-Host "Copy this token into the worker terminal: $token"
 uvicorn controller:app --host 127.0.0.1 --port 8000
 ```
 
 **Linux / macOS**
 ```bash
-export WORKER_SHARED_TOKEN="<replace-with-a-long-random-secret>"
+export WORKER_SHARED_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+printf 'Copy this token into the worker terminal: %s\\n' "$WORKER_SHARED_TOKEN"
 uvicorn controller:app --host 127.0.0.1 --port 8000
 ```
 
-For workers on other machines, bind the controller to an appropriate private interface (or place it behind HTTPS), configure firewall access narrowly, and use HTTPS. Do not expose the development server directly to the public internet.
+These commands bind the controller to this computer only. For workers on other machines, put the controller behind an HTTPS reverse proxy, bind Uvicorn only to the required private interface, restrict firewall access to trusted machines, and use the resulting HTTPS URL in `CONTROLLER_URL`. Do not expose the development server directly to the public internet.
 
 Controller endpoints:
 - `GET /health` — liveness check
